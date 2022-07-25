@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"errors"
+	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -11,7 +12,8 @@ import (
 	"github.com/mitchellnel/ibc-planet-nel/x/blog/types"
 )
 
-// TransmitIbcPostPacket transmits the packet over IBC with the specified source port and source channel
+// TransmitIbcPostPacket transmits the packet over IBC with the specified source port and source
+// channel
 func (k Keeper) TransmitIbcPostPacket(
 	ctx sdk.Context,
 	packetData types.IbcPostPacketData,
@@ -23,7 +25,12 @@ func (k Keeper) TransmitIbcPostPacket(
 
 	sourceChannelEnd, found := k.ChannelKeeper.GetChannel(ctx, sourcePort, sourceChannel)
 	if !found {
-		return sdkerrors.Wrapf(channeltypes.ErrChannelNotFound, "port ID (%s) channel ID (%s)", sourcePort, sourceChannel)
+		return sdkerrors.Wrapf(
+			channeltypes.ErrChannelNotFound,
+			"port ID (%s) channel ID (%s)",
+			sourcePort,
+			sourceChannel,
+		)
 	}
 
 	destinationPort := sourceChannelEnd.GetCounterparty().GetPortID()
@@ -38,9 +45,15 @@ func (k Keeper) TransmitIbcPostPacket(
 		)
 	}
 
-	channelCap, ok := k.ScopedKeeper.GetCapability(ctx, host.ChannelCapabilityPath(sourcePort, sourceChannel))
+	channelCap, ok := k.ScopedKeeper.GetCapability(
+		ctx,
+		host.ChannelCapabilityPath(sourcePort, sourceChannel),
+	)
 	if !ok {
-		return sdkerrors.Wrap(channeltypes.ErrChannelCapabilityNotFound, "module does not own channel capability")
+		return sdkerrors.Wrap(
+			channeltypes.ErrChannelCapabilityNotFound,
+			"module does not own channel capability",
+		)
 	}
 
 	packetBytes, err := packetData.GetBytes()
@@ -67,20 +80,38 @@ func (k Keeper) TransmitIbcPostPacket(
 }
 
 // OnRecvIbcPostPacket processes packet reception
-func (k Keeper) OnRecvIbcPostPacket(ctx sdk.Context, packet channeltypes.Packet, data types.IbcPostPacketData) (packetAck types.IbcPostPacketAck, err error) {
+func (k Keeper) OnRecvIbcPostPacket(
+	ctx sdk.Context,
+	packet channeltypes.Packet,
+	data types.IbcPostPacketData,
+) (packetAck types.IbcPostPacketAck, err error) {
 	// validate packet data upon receiving
 	if err := data.ValidateBasic(); err != nil {
 		return packetAck, err
 	}
 
-	// TODO: packet reception logic
+	id := k.AppendPost(
+		ctx,
+		types.Post{
+			Creator: packet.SourcePort + "-" + packet.SourceChannel + "-" + data.Creator,
+			Title:   data.Title,
+			Content: data.Content,
+		},
+	)
+
+	packetAck.PostID = strconv.FormatUint(id, 10)
 
 	return packetAck, nil
 }
 
 // OnAcknowledgementIbcPostPacket responds to the the success or failure of a packet
 // acknowledgement written on the receiving chain.
-func (k Keeper) OnAcknowledgementIbcPostPacket(ctx sdk.Context, packet channeltypes.Packet, data types.IbcPostPacketData, ack channeltypes.Acknowledgement) error {
+func (k Keeper) OnAcknowledgementIbcPostPacket(
+	ctx sdk.Context,
+	packet channeltypes.Packet,
+	data types.IbcPostPacketData,
+	ack channeltypes.Acknowledgement,
+) error {
 	switch dispatchedAck := ack.Response.(type) {
 	case *channeltypes.Acknowledgement_Error:
 
@@ -106,8 +137,13 @@ func (k Keeper) OnAcknowledgementIbcPostPacket(ctx sdk.Context, packet channelty
 	}
 }
 
-// OnTimeoutIbcPostPacket responds to the case where a packet has not been transmitted because of a timeout
-func (k Keeper) OnTimeoutIbcPostPacket(ctx sdk.Context, packet channeltypes.Packet, data types.IbcPostPacketData) error {
+// OnTimeoutIbcPostPacket responds to the case where a packet has not been transmitted because of a
+// timeout
+func (k Keeper) OnTimeoutIbcPostPacket(
+	ctx sdk.Context,
+	packet channeltypes.Packet,
+	data types.IbcPostPacketData,
+) error {
 
 	// TODO: packet timeout logic
 

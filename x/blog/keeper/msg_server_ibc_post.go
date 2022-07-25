@@ -8,16 +8,18 @@ import (
 	"github.com/mitchellnel/ibc-planet-nel/x/blog/types"
 )
 
-func (k msgServer) SendIbcPost(goCtx context.Context, msg *types.MsgSendIbcPost) (*types.MsgSendIbcPostResponse, error) {
+func (k msgServer) SendIbcPost(
+	goCtx context.Context,
+	msg *types.MsgSendIbcPost,
+) (*types.MsgSendIbcPostResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
-
-	// TODO: logic before transmitting the packet
 
 	// Construct the packet
 	var packet types.IbcPostPacketData
 
 	packet.Title = msg.Title
 	packet.Content = msg.Content
+	packet.Creator = msg.Creator
 
 	// Transmit the packet
 	err := k.TransmitIbcPostPacket(
