@@ -1,0 +1,12 @@
+syntax = "proto3";
+package mitchellnel.ibcplanetnel.blog;
+
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/mitchellnel/ibc-planet-nel/x/blog/types";
+
+// Params defines the parameters for the module.
+message Params {
+  option (gogoproto.goproto_stringer) = false;
+  
+}
