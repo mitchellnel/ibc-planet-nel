@@ -150,7 +150,14 @@ func (k Keeper) OnTimeoutIbcPostPacket(
 	data types.IbcPostPacketData,
 ) error {
 
-	// TODO: packet timeout logic
+	k.AppendTimedoutPost(
+		ctx,
+		types.TimedoutPost{
+			Title:   data.Title,
+			Chain:   packet.DestinationPort + "-" + packet.DestinationChannel,
+			Creator: data.Creator,
+		},
+	)
 
 	return nil
 }
