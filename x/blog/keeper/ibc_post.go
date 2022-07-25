@@ -114,10 +114,7 @@ func (k Keeper) OnAcknowledgementIbcPostPacket(
 ) error {
 	switch dispatchedAck := ack.Response.(type) {
 	case *channeltypes.Acknowledgement_Error:
-
-		// TODO: failed acknowledgement logic
-		_ = dispatchedAck.Error
-
+		// something should be here, but choosing to ignore for this tutorial
 		return nil
 	case *channeltypes.Acknowledgement_Result:
 		// Decode the packet acknowledgment
@@ -128,7 +125,15 @@ func (k Keeper) OnAcknowledgementIbcPostPacket(
 			return errors.New("cannot unmarshal acknowledgment")
 		}
 
-		// TODO: successful acknowledgement logic
+		k.AppendSentPost(
+			ctx,
+			types.SentPost{
+				PostID:  packetAck.PostID,
+				Title:   data.Title,
+				Chain:   packet.DestinationPort + "-" + packet.DestinationChannel,
+				Creator: data.Creator,
+			},
+		)
 
 		return nil
 	default:
